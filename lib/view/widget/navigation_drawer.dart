@@ -204,6 +204,12 @@ class _AppDrawerState extends State<AppDrawer> {
             routeName: '/feedback',
             externalLink: 'https://badgemagic.fossasia.org/privacy/',
           ),
+          _buildListTile(
+            index: 9,
+            icon: Icons.help_outline,
+            title: 'FAQ',
+            routeName: '/faq',
+          ),
         ],
       ),
     );
