@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magic ePaper — NFC ePaper Badge App</title>
+  <meta name="description" content="Design and transfer content to NFC ePaper badges. Open-source Flutter app for Android." />
+  <link rel="icon" type="image/png" href="../assets/docs/app_icon.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-brand" href="#">
+        <img src="../assets/docs/app_icon.png" alt="Magic ePaper icon" height="32" />
+        Magic ePaper
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#screenshots">Screenshots</a></li>
+        <li><a href="#displays">Displays</a></li>
+        <li><a href="#guide">Quick Start</a></li>
+        <li><a href="https://github.com/fossasia/magic-epaper-app" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-content">
+      <img src="../assets/docs/app_icon.png" alt="Magic ePaper" class="hero-icon" />
+      <h1>Magic ePaper</h1>
+      <p class="hero-tagline">Design and transfer content to NFC ePaper badges — wirelessly, battery-free.</p>
+      <div class="hero-badges">
+        <img src="https://img.shields.io/github/license/fossasia/magic-epaper-app?logo=github&style=flat-square" alt="License" />
+        <img src="https://img.shields.io/badge/platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android" />
+        <img src="https://img.shields.io/badge/beta-open-orange?style=flat-square" alt="Beta" />
+        <img src="https://img.shields.io/badge/built%20with-Flutter-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" />
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/fossasia/magic-epaper-app/tree/app" target="_blank" rel="noopener">Download APK</a>
+        <a class="btn btn-secondary" href="https://github.com/fossasia/magic-epaper-app" target="_blank" rel="noopener">View Source</a>
+      </div>
+    </div>
+    <div class="hero-phone">
+      <img src="../assets/docs/screenshots/menu.jpeg" alt="App home screen" />
+    </div>
+  </header>
+
+  <!-- FEATURES -->
+  <section id="features" class="section">
+    <div class="container">
+      <h2>Features</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">✏️</div>
+          <h3>Canvas Editor</h3>
+          <p>Free-form drawing with layers, text, emoji, and font customization. Designs save as editable JSON to your library.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🖼️</div>
+          <h3>Image Import</h3>
+          <p>Import any image and apply ePaper-optimized processing: Floyd–Steinberg and Atkinson dithering, brightness, contrast, and color filters.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📇</div>
+          <h3>Card Templates</h3>
+          <p>One-tap templates for Employee ID, Price Tag, Business Card, Calendar, Restaurant Menu, Weather Snapshot, and more.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>NFC Transfer</h3>
+          <p>Write images and NDEF records (text, URLs, vCards, app launch intents) to ePaper badges over NFC in seconds.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📚</div>
+          <h3>Image Library</h3>
+          <p>Processed images are saved locally for instant re-transfer without redesigning. Editable designs can be reopened and modified.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔳</div>
+          <h3>QR &amp; Barcodes</h3>
+          <p>Generate QR codes, Code 128, EAN, and other barcode formats directly on-badge — ideal for product or event labels.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>Bulk Import</h3>
+          <p>Upload a CSV to generate many unique cards at once — all four template types supported, output goes straight to the library.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔧</div>
+          <h3>Command Console</h3>
+          <p>Raw hex / APDU terminal for power users and hardware developers to probe and debug NFC ePaper tags directly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section id="screenshots" class="section section-alt">
+    <div class="container">
+      <h2>Screenshots</h2>
+      <p class="section-sub">Core app · Design tools · Card templates</p>
+
+      <h3 class="gallery-group-label">Core</h3>
+      <div class="gallery">
+        <figure>
+          <img src="../assets/docs/screenshots/menu.jpeg" alt="Home menu" loading="lazy" />
+          <figcaption>Home</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/displays.jpeg" alt="Supported displays" loading="lazy" />
+          <figcaption>Displays</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/library.jpeg" alt="Image library" loading="lazy" />
+          <figcaption>Library</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/write-nfc.jpeg" alt="Write to NFC tag" loading="lazy" />
+          <figcaption>Write NFC</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/read-nfc.jpeg" alt="Read NFC tag" loading="lazy" />
+          <figcaption>Read NFC</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/transfer.jpeg" alt="Transfer in progress" loading="lazy" />
+          <figcaption>Transfer</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="gallery-group-label">Design Tools</h3>
+      <div class="gallery">
+        <figure>
+          <img src="../assets/docs/screenshots/canvas.jpeg" alt="Canvas editor" loading="lazy" />
+          <figcaption>Canvas</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/image-editor.jpeg" alt="Image editor" loading="lazy" />
+          <figcaption>Image Editor</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/adjust.jpeg" alt="Adjust tools" loading="lazy" />
+          <figcaption>Adjust</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/text-editor.jpeg" alt="Text editor" loading="lazy" />
+          <figcaption>Text</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/barcode.jpeg" alt="Barcode generator" loading="lazy" />
+          <figcaption>Barcode</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/save-image.jpeg" alt="Save image" loading="lazy" />
+          <figcaption>Save Image</figcaption>
+        </figure>
+      </div>
+
+      <h3 class="gallery-group-label">Card Templates</h3>
+      <div class="gallery">
+        <figure>
+          <img src="../assets/docs/screenshots/templates.jpeg" alt="Template picker" loading="lazy" />
+          <figcaption>Templates</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/employee-id.jpeg" alt="Employee ID template" loading="lazy" />
+          <figcaption>Employee ID</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/badge.jpeg" alt="Badge template" loading="lazy" />
+          <figcaption>Badge</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/calendar.jpeg" alt="Calendar template" loading="lazy" />
+          <figcaption>Calendar</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/weather.jpeg" alt="Weather snapshot template" loading="lazy" />
+          <figcaption>Weather</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/restaurant-menu.jpeg" alt="Restaurant menu template" loading="lazy" />
+          <figcaption>Menu</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/bulk-import.jpeg" alt="Bulk CSV import" loading="lazy" />
+          <figcaption>Bulk Import</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/command-console.jpeg" alt="Command console" loading="lazy" />
+          <figcaption>Console</figcaption>
+        </figure>
+        <figure>
+          <img src="../assets/docs/screenshots/custom-display.jpeg" alt="Custom display config" loading="lazy" />
+          <figcaption>Custom Display</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUPPORTED DISPLAYS -->
+  <section id="displays" class="section">
+    <div class="container">
+      <h2>Supported Displays</h2>
+      <p class="section-sub">Tested hardware as of beta. More displays can be added via the custom display config.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Display</th>
+              <th>Size</th>
+              <th>Resolution</th>
+              <th>Colors</th>
+              <th>Protocol</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Waveshare 2.13" (B/W/R)</td>
+              <td>2.13"</td>
+              <td>250 × 122</td>
+              <td>3 (B/W/R)</td>
+              <td>NFC ISO 15693</td>
+            </tr>
+            <tr>
+              <td>Waveshare 2.13" Gen-2 (4-color)</td>
+              <td>2.13"</td>
+              <td>250 × 122</td>
+              <td>4 (B/W/R/Y)</td>
+              <td>NFC self-describing</td>
+            </tr>
+            <tr>
+              <td>Santek EZ Sign</td>
+              <td>2.13"</td>
+              <td>250 × 122</td>
+              <td>3 (B/W/R)</td>
+              <td>NFC ISODep APDU</td>
+            </tr>
+            <tr>
+              <td>Custom Display</td>
+              <td>Any</td>
+              <td>Configurable</td>
+              <td>Configurable</td>
+              <td>User-defined</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section id="guide" class="section section-alt">
+    <div class="container">
+      <h2>Quick Start</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Install the app</h3>
+            <p>Download the latest APK from the <a href="https://github.com/fossasia/magic-epaper-app/tree/app" target="_blank" rel="noopener">app branch</a> and sideload it on your Android device. Enable NFC in system settings.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Select your display</h3>
+            <p>Open the app and tap <strong>Displays</strong> to pick your ePaper model. The app will configure the correct resolution and color palette automatically.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>Create your design</h3>
+            <p>Use the <strong>Canvas</strong> for free-form drawing, import an image via the editor, or pick a ready-made <strong>Template</strong> (Employee ID, Calendar, Weather, etc.).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h3>Transfer to badge</h3>
+            <p>Tap <strong>Write NFC</strong>, hold your phone against the badge, and the image is transferred wirelessly. No battery required on the badge.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h3>Manage your library</h3>
+            <p>Every processed image is saved to the <strong>Library</strong>. Tap any item to re-transfer instantly, or tap <strong>Edit</strong> to reopen an editable design.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTRIBUTING -->
+  <section id="contributing" class="section">
+    <div class="container contrib-grid">
+      <div>
+        <h2>Contributing</h2>
+        <p>Magic ePaper is an open-source <a href="https://fossasia.org" target="_blank" rel="noopener">FOSSASIA</a> project. Contributions are welcome — bug reports, translations, and pull requests all help.</p>
+        <ul class="contrib-links">
+          <li><a href="https://github.com/fossasia/magic-epaper-app/issues" target="_blank" rel="noopener">Report a bug</a></li>
+          <li><a href="https://github.com/fossasia/magic-epaper-app/issues/new?template=feature_request.md" target="_blank" rel="noopener">Request a feature</a></li>
+          <li><a href="https://hosted.weblate.org/projects/fossasia/magic-epaper-app/" target="_blank" rel="noopener">Translate on Weblate</a></li>
+          <li><a href="https://github.com/fossasia/magic-epaper-app/blob/main/docs/commitStyle.md" target="_blank" rel="noopener">Commit style guide</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Permissions</h2>
+        <ul class="perm-list">
+          <li><strong>NFC</strong> — read and write data to ePaper badges</li>
+          <li><strong>Internet</strong> — fetch weather data for the Weather Snapshot template (Open-Meteo, no API key required)</li>
+          <li><strong>Camera / Storage</strong> — import photos for the image editor</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container footer-inner">
+      <span>Magic ePaper · <a href="https://fossasia.org" target="_blank" rel="noopener">FOSSASIA</a> · <a href="https://github.com/fossasia/magic-epaper-app/blob/main/LICENSE.md" target="_blank" rel="noopener">Apache 2.0</a></span>
+      <span><a href="docs/privacyPolicy.md" target="_blank" rel="noopener">Privacy Policy</a></span>
+    </div>
+  </footer>
+
+  <!-- Lightbox (minimal, no dependencies) -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Image preview">
+    <button class="lb-close" aria-label="Close">&times;</button>
+    <img id="lb-img" src="" alt="" />
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
