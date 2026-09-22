@@ -130,7 +130,17 @@ pub fn process_image_rust(
         .map(|p| Colorf32 { r: p[0] as f32, g: p[1] as f32, b: p[2] as f32 })
         .collect();
 
-    if !matches!(color_mode, ColorMode::Bwry) && !matches!(method, DitherMethod::Threshold) {
+    if matches!(color_mode, ColorMode::Bwry) {
+        buffer.par_iter_mut().for_each(|px| {
+            let r = (px.r / 255.0).powf(0.85) * 255.0;
+            let g = (px.g / 255.0).powf(0.85) * 255.0;
+            let b = (px.b / 255.0).powf(0.85) * 255.0;
+            let gray = (r + g + b) / 3.0;
+            px.r = (gray + (r - gray) * 1.4).clamp(0.0, 255.0);
+            px.g = (gray + (g - gray) * 1.4).clamp(0.0, 255.0);
+            px.b = (gray + (b - gray) * 1.4).clamp(0.0, 255.0);
+        });
+    } else if !matches!(method, DitherMethod::Threshold) {
         let gamma_lut = dither_gamma_lut();
         buffer.par_iter_mut().for_each(|px| {
             px.r = gamma_lut[px.r.clamp(0.0, 255.0) as usize];
