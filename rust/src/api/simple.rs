@@ -64,6 +64,65 @@ fn apply_dither_gamma(c: f32) -> f32 {
     (c / 255.0).powf(DITHER_GAMMA) * 255.0
 }
 
+#[inline(always)]
+fn srgb_to_linear(c: f32) -> f32 {
+    let c = c / 255.0;
+    if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+}
+
+#[inline(always)]
+fn rgb_to_oklab(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
+    let rl = srgb_to_linear(r);
+    let gl = srgb_to_linear(g);
+    let bl = srgb_to_linear(b);
+    let l = (0.4122214708 * rl + 0.5363325363 * gl + 0.0514459929 * bl).cbrt();
+    let m = (0.2119034982 * rl + 0.6806995451 * gl + 0.1073969566 * bl).cbrt();
+    let s = (0.0883024619 * rl + 0.2817188376 * gl + 0.6299787005 * bl).cbrt();
+    (
+        0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+        1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+        0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+    )
+}
+
+struct OklabEntry {
+    l: f32,
+    a: f32,
+    b: f32,
+    rgb: Colorf32,
+}
+
+fn oklab_palette_bwry() -> &'static [OklabEntry; 4] {
+    static CACHE: OnceLock<[OklabEntry; 4]> = OnceLock::new();
+    CACHE.get_or_init(|| {
+        let mut i = 0;
+        PALETTE_BWRY.map(|c| {
+            let _ = i;
+            let (l, a, b) = rgb_to_oklab(c.r, c.g, c.b);
+            i += 1;
+            OklabEntry { l, a, b, rgb: c }
+        })
+    })
+}
+
+#[inline(always)]
+fn closest_color_oklab(pixel: Colorf32, palette: &[OklabEntry]) -> Colorf32 {
+    let (pl, pa, pb) = rgb_to_oklab(pixel.r, pixel.g, pixel.b);
+    let mut min_dist = f32::MAX;
+    let mut best = palette[0].rgb;
+    for e in palette {
+        let dl = pl - e.l;
+        let da = pa - e.a;
+        let db = pb - e.b;
+        let dist = dl * dl + da * da + db * db;
+        if dist < min_dist {
+            min_dist = dist;
+            best = e.rgb;
+        }
+    }
+    best
+}
+
 fn dither_gamma_lut() -> &'static [f32; 256] {
     static LUT: OnceLock<[f32; 256]> = OnceLock::new();
     LUT.get_or_init(|| {
@@ -144,11 +203,22 @@ pub fn process_image_rust(
         ColorMode::Bwr => &PALETTE_BWR[..],
         ColorMode::Bwry => &PALETTE_BWRY[..],
     };
+    let use_oklab = matches!(color_mode, ColorMode::Bwry);
+
+    macro_rules! snap {
+        ($px:expr) => {
+            if use_oklab {
+                closest_color_oklab($px, oklab_palette_bwry())
+            } else {
+                closest_color($px, palette)
+            }
+        };
+    }
 
     match method {
         DitherMethod::Threshold => {
             buffer.par_iter_mut().for_each(|px| {
-                *px = closest_color(*px, palette);
+                *px = snap!(*px);
             });
         }
         DitherMethod::Bayer => {
@@ -158,7 +228,7 @@ pub fn process_image_rust(
                     let brow = &offsets[y & 7];
                     for (x, px) in row.iter_mut().enumerate() {
                         let off = brow[x & 7];
-                        *px = closest_color(Colorf32 { r: px.r + off, g: px.g + off, b: px.b + off }, palette);
+                        *px = snap!(Colorf32 { r: px.r + off, g: px.g + off, b: px.b + off });
                     }
                 });
             }
@@ -169,7 +239,7 @@ pub fn process_image_rust(
                 for x in 0..w {
                     let idx = y * w + x;
                     let old_pixel = unsafe { *ptr.add(idx) };
-                    let new_pixel = closest_color(old_pixel, palette);
+                    let new_pixel = snap!(old_pixel);
                     unsafe { ptr.add(idx).write(new_pixel) };
                     let er = old_pixel.r - new_pixel.r;
                     let eg = old_pixel.g - new_pixel.g;
