@@ -1069,17 +1069,22 @@ class _NativeCanvasEditorState extends State<NativeCanvasEditor> {
                                 !widget.returnDocument
                             ? () => Navigator.pop(context, element.elementId)
                             : switch (element.kind) {
-                                CanvasElementKind.text => () =>
-                                    _editText(element),
-                                CanvasElementKind.image => () =>
-                                    _replaceImage(element),
-                                CanvasElementKind.barcode => () =>
-                                    _editBarcode(element),
+                                CanvasElementKind.text => () {
+                                    _editText(element);
+                                  },
+                                CanvasElementKind.image => () {
+                                    _replaceImage(element);
+                                  },
+                                CanvasElementKind.barcode => () {
+                                    _editBarcode(element);
+                                  },
                                 CanvasElementKind.widget => null,
                                 CanvasElementKind.fill => null,
                               },
                         onCrop: element.kind == CanvasElementKind.image
-                            ? () => _cropImage(element)
+                            ? () {
+                                _cropImage(element);
+                              }
                             : null,
                       ),
                     if (_drawMode)
@@ -1134,7 +1139,9 @@ class _NativeCanvasEditorState extends State<NativeCanvasEditor> {
           Expanded(
             child: _BarButton(
               label: appLocalizations.canvas,
-              onTap: () => _cycleAndRerenderStickers(),
+              onTap: () {
+                _cycleAndRerenderStickers();
+              },
               iconWidget: Container(
                 width: 22,
                 height: 22,
@@ -1150,25 +1157,33 @@ class _NativeCanvasEditorState extends State<NativeCanvasEditor> {
             child: _BarButton(
                 icon: Icons.image_outlined,
                 label: appLocalizations.image,
-                onTap: _addImage),
+                onTap: () {
+                  _addImage();
+                }),
           ),
           Expanded(
             child: _BarButton(
                 icon: Icons.auto_awesome,
                 label: appLocalizations.stickers,
-                onTap: _addSticker),
+                onTap: () {
+                  _addSticker();
+                }),
           ),
           Expanded(
             child: _BarButton(
                 icon: Icons.text_fields,
                 label: appLocalizations.text,
-                onTap: _addText),
+                onTap: () {
+                  _addText();
+                }),
           ),
           Expanded(
             child: _BarButton(
                 icon: Icons.qr_code,
                 label: appLocalizations.barcode,
-                onTap: _addBarcode),
+                onTap: () {
+                  _addBarcode();
+                }),
           ),
           Expanded(
             child: _BarButton(
