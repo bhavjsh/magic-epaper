@@ -108,9 +108,12 @@ fn oklab_palette_bwry() -> &'static [OklabEntry; 4] {
 #[inline(always)]
 fn closest_color_oklab(pixel: Colorf32, palette: &[OklabEntry]) -> Colorf32 {
     let (pl, pa, pb) = rgb_to_oklab(pixel.r, pixel.g, pixel.b);
+    let chroma = (pa * pa + pb * pb).sqrt();
+    // low-chroma (near-gray) pixels only compete against black/white
+    let effective = if chroma < 0.09 { &palette[0..2] } else { palette };
     let mut min_dist = f32::MAX;
-    let mut best = palette[0].rgb;
-    for e in palette {
+    let mut best = effective[0].rgb;
+    for e in effective {
         let dl = pl - e.l;
         let da = pa - e.a;
         let db = pb - e.b;
