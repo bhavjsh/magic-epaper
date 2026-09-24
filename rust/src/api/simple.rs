@@ -1,7 +1,8 @@
-use image::{load_from_memory_with_format, ImageFormat, RgbaImage};
+use image::{load_from_memory, load_from_memory_with_format, ImageFormat, RgbaImage};
 use std::io::Cursor;
 use std::sync::OnceLock;
 use rayon::prelude::*;
+use tract_onnx::prelude::*;
 
 pub enum DitherMethod {
     FloydSteinberg,
@@ -335,4 +336,66 @@ fn distribute_error(ptr: *mut Colorf32, x: usize, y: usize, w: usize, h: usize, 
     if nx >= 0 && (nx as usize) < w && ny >= 0 && (ny as usize) < h {
         unsafe { add_err(ptr, ny as usize * w + nx as usize, er, eg, eb, weight) };
     }
+}
+
+#[flutter_rust_bridge::frb]
+pub fn apply_sketch_filter_rust(
+    image_bytes: Vec<u8>,
+    model_path: String,
+    target_width: u32,
+    target_height: u32,
+) -> Result<Vec<u8>, String> {
+    let dynamic_img = load_from_memory(&image_bytes)
+        .map_err(|e| format!("Failed to decode image: {}", e))?
+        .resize_exact(target_width, target_height, image::imageops::FilterType::Triangle);
+    let img = dynamic_img.to_rgba8();
+    let (width, height) = img.dimensions();
+    let (w, h) = (width as usize, height as usize);
+    let pad_h = (8 - (h % 8)) % 8;
+    let pad_w = (8 - (w % 8)) % 8;
+    let padded_h = h + pad_h;
+    let padded_w = w + pad_w;
+    let mut input_flat = vec![0.0f32; 3 * padded_h * padded_w];
+    for y in 0..padded_h {
+        let src_y = y.min(h - 1);
+        for x in 0..padded_w {
+            let src_x = x.min(w - 1);
+            let pixel = img.get_pixel(src_x as u32, src_y as u32);
+            input_flat[0 * padded_h * padded_w + y * padded_w + x] = pixel[0] as f32 / 255.0;
+            input_flat[1 * padded_h * padded_w + y * padded_w + x] = pixel[1] as f32 / 255.0;
+            input_flat[2 * padded_h * padded_w + y * padded_w + x] = pixel[2] as f32 / 255.0;
+        }
+    }
+    let model = tract_onnx::onnx()
+        .model_for_path(&model_path)
+        .map_err(|e| format!("Failed to load ONNX: {}", e))?
+        .into_optimized()
+        .map_err(|e| format!("Failed to optimize ONNX: {}", e))?
+        .into_runnable()
+        .map_err(|e| format!("Failed to make runnable: {}", e))?;
+    let tensor = tract_ndarray::Array4::from_shape_vec((1, 3, padded_h, padded_w), input_flat)
+        .map_err(|e| format!("Shape error: {}", e))?
+        .into_tensor();
+    let mut outputs = model.run(tvec!(tensor.into()))
+        .map_err(|e| format!("Inference failed: {}", e))?;
+    let out_tensor = outputs.remove(0).into_tensor();
+    let output_data = out_tensor.as_slice::<f32>()
+        .map_err(|e| format!("Failed to extract tensor data: {}", e))?;
+    let mut raw: Vec<u8> = Vec::with_capacity(w * h * 4);
+    for y in 0..h {
+        for x in 0..w {
+            let pixel = img.get_pixel(x as u32, y as u32);
+            let sketch_mask = output_data[y * padded_w + x].clamp(0.0, 1.0);
+            raw.push((pixel[0] as f32 * sketch_mask) as u8);
+            raw.push((pixel[1] as f32 * sketch_mask) as u8);
+            raw.push((pixel[2] as f32 * sketch_mask) as u8);
+            raw.push(255);
+        }
+    }
+    let out_img = RgbaImage::from_raw(width, height, raw)
+        .ok_or_else(|| "Buffer size mismatch during rebuild".to_string())?;
+    let mut png_bytes: Vec<u8> = Vec::new();
+    out_img.write_to(&mut Cursor::new(&mut png_bytes), ImageFormat::Png)
+        .map_err(|e| format!("Failed to encode output to PNG: {}", e))?;
+    Ok(png_bytes)
 }

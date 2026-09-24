@@ -1503,7 +1503,7 @@ class _BarButton extends StatelessWidget {
   final IconData? icon;
   final Widget? iconWidget;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

@@ -29,7 +29,8 @@ import 'package:magicepaperapp/constants/color_constants.dart';
 import 'package:magicepaperapp/constants/dimens.dart';
 import 'package:magicepaperapp/l10n/app_localizations.dart';
 import '../src/rust/api/simple.dart' as rust_api;
-import '../utils/app_logger.dart';
+import '../util/app_logger.dart';
+import '../services/sketch_filter_service.dart';
 
 class ImageEditor extends StatefulWidget {
   final DisplayDevice device;
@@ -65,6 +66,9 @@ class _ImageEditorState extends State<ImageEditor> {
   int _selectedFilterIndex = 0;
   bool flipHorizontal = false;
   bool flipVertical = false;
+  bool _sketchEnabled = false;
+  bool _sketchLoading = false;
+  img.Image? _preSketchImage;
   Waveform? _selectedWaveform;
   String? _selectedWaveformName;
 
@@ -317,6 +321,50 @@ class _ImageEditorState extends State<ImageEditor> {
       flipHorizontal = _pendingInitialFlipH;
       flipVertical = _pendingInitialFlipV;
     });
+  }
+
+  Future<void> _toggleSketch(ImageLoader imgLoader) async {
+    if (imgLoader.image == null) return;
+    if (_sketchLoading) return;
+
+    if (_sketchEnabled) {
+      setState(() {
+        _sketchEnabled = false;
+      });
+      if (_preSketchImage != null) {
+        final bytes = Uint8List.fromList(img.encodePng(_preSketchImage!));
+        await imgLoader.updateImage(
+            bytes: bytes,
+            width: widget.device.width,
+            height: widget.device.height);
+        await imgLoader.saveFinalizedImageBytes(bytes);
+        _preSketchImage = null;
+      }
+      return;
+    }
+
+    setState(() => _sketchLoading = true);
+    try {
+      _preSketchImage = img.Image.from(imgLoader.image!);
+      final sourceBytes = Uint8List.fromList(img.encodePng(imgLoader.image!));
+      final sketchBytes = await SketchFilterService.generateSketch(
+        imageBytes: sourceBytes,
+        targetWidth: widget.device.width,
+        targetHeight: widget.device.height,
+      );
+      if (!mounted) return;
+      await imgLoader.updateImage(
+          bytes: sketchBytes,
+          width: widget.device.width,
+          height: widget.device.height);
+      await imgLoader.saveFinalizedImageBytes(sketchBytes);
+      setState(() => _sketchEnabled = true);
+    } catch (e) {
+      AppLogger.error('Sketch filter failed: $e');
+      _preSketchImage = null;
+    } finally {
+      if (mounted) setState(() => _sketchLoading = false);
+    }
   }
 
   Future<void> _exportXbmFiles() async {
@@ -793,6 +841,30 @@ class _ImageEditorState extends State<ImageEditor> {
                     child:
                         _buildWaveformDropdownGroup(context, appLocalizations),
                   ),
+                _sketchLoading
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(colorWhite),
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        icon: Icon(
+                          Icons.auto_fix_high,
+                          color: _sketchEnabled
+                              ? Colors.yellowAccent
+                              : colorWhite,
+                        ),
+                        tooltip: 'Sketch filter',
+                        onPressed: () =>
+                            _toggleSketch(context.read<ImageLoader>()),
+                      ),
                 Padding(
                   padding: const EdgeInsets.only(right: Dimens.spacingS),
                   child: _buildTransferActionButton(context, appLocalizations),
