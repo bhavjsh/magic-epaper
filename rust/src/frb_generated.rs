@@ -269,7 +269,12 @@ fn pde_ffi_dispatcher_primary_impl(
     match func_id {
         1 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
         2 => wire__crate__api__simple__process_image_rust_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__simple__apply_sketch_filter_rust_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__simple__apply_sketch_filter_rust_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
         _ => unreachable!(),
     }
 }

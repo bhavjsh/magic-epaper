@@ -857,9 +857,8 @@ class _ImageEditorState extends State<ImageEditor> {
                     : IconButton(
                         icon: Icon(
                           Icons.auto_fix_high,
-                          color: _sketchEnabled
-                              ? Colors.yellowAccent
-                              : colorWhite,
+                          color:
+                              _sketchEnabled ? Colors.yellowAccent : colorWhite,
                         ),
                         tooltip: 'Sketch filter',
                         onPressed: () =>

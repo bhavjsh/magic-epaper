@@ -14,8 +14,7 @@ class SketchFilterService {
     final appDir = await getApplicationDocumentsDirectory();
     final modelFile = File('${appDir.path}/line_art_int8.onnx');
     if (!await modelFile.exists()) {
-      final byteData =
-          await rootBundle.load('assets/model/line_art_int8.onnx');
+      final byteData = await rootBundle.load('assets/model/line_art_int8.onnx');
       await modelFile.writeAsBytes(
         byteData.buffer
             .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
