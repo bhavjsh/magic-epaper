@@ -409,6 +409,28 @@ fn distribute_error(
     }
 }
 
+type OnnxModel = tract_onnx::prelude::SimplePlan<
+    tract_onnx::prelude::TypedFact,
+    Box<dyn tract_onnx::prelude::TypedOp>,
+    tract_onnx::prelude::Graph<tract_onnx::prelude::TypedFact, Box<dyn tract_onnx::prelude::TypedOp>>,
+>;
+
+static SKETCH_MODEL: OnceLock<OnnxModel> = OnceLock::new();
+
+fn get_sketch_model(model_path: &str) -> Result<&'static OnnxModel, String> {
+    if let Some(m) = SKETCH_MODEL.get() {
+        return Ok(m);
+    }
+    let model = tract_onnx::onnx()
+        .model_for_path(model_path)
+        .map_err(|e| format!("Failed to load ONNX: {}", e))?
+        .into_optimized()
+        .map_err(|e| format!("Failed to optimize ONNX: {}", e))?
+        .into_runnable()
+        .map_err(|e| format!("Failed to make runnable: {}", e))?;
+    Ok(SKETCH_MODEL.get_or_init(|| model))
+}
+
 #[flutter_rust_bridge::frb]
 pub fn apply_sketch_filter_rust(
     image_bytes: Vec<u8>,
@@ -441,13 +463,7 @@ pub fn apply_sketch_filter_rust(
             input_flat[2 * padded_h * padded_w + y * padded_w + x] = pixel[2] as f32 / 255.0;
         }
     }
-    let model = tract_onnx::onnx()
-        .model_for_path(&model_path)
-        .map_err(|e| format!("Failed to load ONNX: {}", e))?
-        .into_optimized()
-        .map_err(|e| format!("Failed to optimize ONNX: {}", e))?
-        .into_runnable()
-        .map_err(|e| format!("Failed to make runnable: {}", e))?;
+    let model = get_sketch_model(&model_path)?;
     let tensor = tract_ndarray::Array4::from_shape_vec((1, 3, padded_h, padded_w), input_flat)
         .map_err(|e| format!("Shape error: {}", e))?
         .into_tensor();

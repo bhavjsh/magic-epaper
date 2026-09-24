@@ -1336,5 +1336,6 @@
   "sortColorCountAsc": "Colors (fewest first)",
   "sortColorCountDesc": "Colors (most first)",
   "showBetaDisplays": "show beta displays",
-  "showBetaDisplaysTooltip": "show untested displays"
+  "showBetaDisplaysTooltip": "show untested displays",
+  "sketchFilter": "Sketch filter"
 }

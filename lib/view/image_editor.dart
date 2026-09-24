@@ -29,7 +29,7 @@ import 'package:magicepaperapp/constants/color_constants.dart';
 import 'package:magicepaperapp/constants/dimens.dart';
 import 'package:magicepaperapp/l10n/app_localizations.dart';
 import '../src/rust/api/simple.dart' as rust_api;
-import '../util/app_logger.dart';
+import '../utils/app_logger.dart';
 import '../services/sketch_filter_service.dart';
 
 class ImageEditor extends StatefulWidget {
@@ -247,6 +247,8 @@ class _ImageEditorState extends State<ImageEditor> {
       _selectedFilterIndex = 0;
       flipHorizontal = false;
       flipVertical = false;
+      _sketchEnabled = false;
+      _preSketchImage = null;
     });
 
     await Future.delayed(Duration.zero);
@@ -346,7 +348,9 @@ class _ImageEditorState extends State<ImageEditor> {
     setState(() => _sketchLoading = true);
     try {
       _preSketchImage = img.Image.from(imgLoader.image!);
-      final sourceBytes = Uint8List.fromList(img.encodePng(imgLoader.image!));
+      final sourceBytes = _processedPngs.isNotEmpty
+          ? _processedPngs[_selectedFilterIndex]
+          : Uint8List.fromList(img.encodePng(imgLoader.image!));
       final sketchBytes = await SketchFilterService.generateSketch(
         imageBytes: sourceBytes,
         targetWidth: widget.device.width,
@@ -860,7 +864,7 @@ class _ImageEditorState extends State<ImageEditor> {
                           color:
                               _sketchEnabled ? Colors.yellowAccent : colorWhite,
                         ),
-                        tooltip: 'Sketch filter',
+                        tooltip: appLocalizations.sketchFilter,
                         onPressed: () =>
                             _toggleSketch(context.read<ImageLoader>()),
                       ),
