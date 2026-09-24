@@ -28,9 +28,9 @@ import 'package:magicepaperapp/constants/asset_paths.dart';
 import 'package:magicepaperapp/constants/color_constants.dart';
 import 'package:magicepaperapp/constants/dimens.dart';
 import 'package:magicepaperapp/l10n/app_localizations.dart';
+import '../services/sketch_filter_service.dart';
 import '../src/rust/api/simple.dart' as rust_api;
 import '../utils/app_logger.dart';
-import '../services/sketch_filter_service.dart';
 
 class ImageEditor extends StatefulWidget {
   final DisplayDevice device;
@@ -66,9 +66,6 @@ class _ImageEditorState extends State<ImageEditor> {
   int _selectedFilterIndex = 0;
   bool flipHorizontal = false;
   bool flipVertical = false;
-  bool _sketchEnabled = false;
-  bool _sketchLoading = false;
-  img.Image? _preSketchImage;
   Waveform? _selectedWaveform;
   String? _selectedWaveformName;
 
@@ -83,6 +80,9 @@ class _ImageEditorState extends State<ImageEditor> {
   double _currentBrightness = 1.0;
   double _currentContrast = 1.0;
   img.Image? _pristineImage;
+
+  bool _isSketchMode = false;
+  Uint8List? _preSketchImageBytes;
 
   Map<String, dynamic>? _pendingCanvasDocument;
   Map<String, dynamic>? _pendingTemplateData;
@@ -122,6 +122,63 @@ class _ImageEditorState extends State<ImageEditor> {
   void dispose() {
     _colorDebounce?.cancel();
     super.dispose();
+  }
+
+  Future<void> _toggleSketchFilter() async {
+    final imgLoader = context.read<ImageLoader>();
+    if (imgLoader.image == null || _isProcessingImages) return;
+
+    setState(() {
+      _isProcessingImages = true;
+    });
+
+    try {
+      if (!_isSketchMode) {
+        _preSketchImageBytes =
+            Uint8List.fromList(img.encodePng(imgLoader.image!));
+
+        final sketchBytes = await SketchFilterService.generateSketch(
+          imageBytes: _preSketchImageBytes!,
+          targetWidth: widget.device.width.toInt(),
+          targetHeight: widget.device.height.toInt(),
+        );
+
+        await imgLoader.updateImage(
+          bytes: sketchBytes,
+          width: widget.device.width,
+          height: widget.device.height,
+        );
+
+        setState(() {
+          _isSketchMode = true;
+        });
+      } else {
+        if (_preSketchImageBytes != null) {
+          await imgLoader.updateImage(
+            bytes: _preSketchImageBytes!,
+            width: widget.device.width,
+            height: widget.device.height,
+          );
+          _preSketchImageBytes = null;
+        }
+        setState(() {
+          _isSketchMode = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Failed to apply sketch filter: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to apply filter: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingImages = false;
+        });
+      }
+    }
   }
 
   Future<void> loadInitialImage() async {
@@ -247,8 +304,6 @@ class _ImageEditorState extends State<ImageEditor> {
       _selectedFilterIndex = 0;
       flipHorizontal = false;
       flipVertical = false;
-      _sketchEnabled = false;
-      _preSketchImage = null;
     });
 
     await Future.delayed(Duration.zero);
@@ -270,9 +325,6 @@ class _ImageEditorState extends State<ImageEditor> {
       for (int i = 0; i < filtersToRun.length; i++) {
         if (!mounted || _processedSourceImage != sourceImage) break;
 
-        Uint8List processedPngBytes;
-        img.Image? decodedImage;
-
         Uint8List bytesForRust = sourcePngBytes;
 
         if (filtersToRun[i].useDartHalftone) {
@@ -284,7 +336,7 @@ class _ImageEditorState extends State<ImageEditor> {
           bytesForRust = Uint8List.fromList(img.encodePng(tempImg));
         }
 
-        processedPngBytes = await rust_api.processImageRust(
+        final Uint8List processedPngBytes = await rust_api.processImageRust(
           imageBytes: bytesForRust,
           targetWidth: widget.device.width.toInt(),
           targetHeight: widget.device.height.toInt(),
@@ -292,7 +344,8 @@ class _ImageEditorState extends State<ImageEditor> {
           colorMode: filtersToRun[i].colorMode,
         );
 
-        decodedImage = await compute(img.decodePng, processedPngBytes);
+        final img.Image? decodedImage =
+            await compute(img.decodePng, processedPngBytes);
 
         if (mounted && _processedSourceImage == sourceImage) {
           setState(() {
@@ -323,52 +376,6 @@ class _ImageEditorState extends State<ImageEditor> {
       flipHorizontal = _pendingInitialFlipH;
       flipVertical = _pendingInitialFlipV;
     });
-  }
-
-  Future<void> _toggleSketch(ImageLoader imgLoader) async {
-    if (imgLoader.image == null) return;
-    if (_sketchLoading) return;
-
-    if (_sketchEnabled) {
-      setState(() {
-        _sketchEnabled = false;
-      });
-      if (_preSketchImage != null) {
-        final bytes = Uint8List.fromList(img.encodePng(_preSketchImage!));
-        await imgLoader.updateImage(
-            bytes: bytes,
-            width: widget.device.width,
-            height: widget.device.height);
-        await imgLoader.saveFinalizedImageBytes(bytes);
-        _preSketchImage = null;
-      }
-      return;
-    }
-
-    setState(() => _sketchLoading = true);
-    try {
-      _preSketchImage = img.Image.from(imgLoader.image!);
-      final sourceBytes = _processedPngs.isNotEmpty
-          ? _processedPngs[_selectedFilterIndex]
-          : Uint8List.fromList(img.encodePng(imgLoader.image!));
-      final sketchBytes = await SketchFilterService.generateSketch(
-        imageBytes: sourceBytes,
-        targetWidth: widget.device.width,
-        targetHeight: widget.device.height,
-      );
-      if (!mounted) return;
-      await imgLoader.updateImage(
-          bytes: sketchBytes,
-          width: widget.device.width,
-          height: widget.device.height);
-      await imgLoader.saveFinalizedImageBytes(sketchBytes);
-      setState(() => _sketchEnabled = true);
-    } catch (e) {
-      AppLogger.error('Sketch filter failed: $e');
-      _preSketchImage = null;
-    } finally {
-      if (mounted) setState(() => _sketchLoading = false);
-    }
   }
 
   Future<void> _exportXbmFiles() async {
@@ -536,8 +543,6 @@ class _ImageEditorState extends State<ImageEditor> {
         InkWell(
           onTap: () => _showRefreshModeInfoDialog(context),
           customBorder: const CircleBorder(),
-          // Compact 32 footprint so the title keeps its horizontal space
-          // on narrow screens (a 48 box squeezed the title too much).
           child: const SizedBox(
             height: controlHeight,
             width: controlHeight,
@@ -577,8 +582,6 @@ class _ImageEditorState extends State<ImageEditor> {
         foregroundColor: colorWhite,
         padding: const EdgeInsets.symmetric(
             horizontal: Dimens.spacingM, vertical: Dimens.spacingXs),
-        // Visual height stays compact (32), but the default padded
-        // tapTargetSize keeps the touch target at the 48dp guideline.
         minimumSize: const Size(0, 32),
         textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(
@@ -839,35 +842,20 @@ class _ImageEditorState extends State<ImageEditor> {
         ),
         actions: hasActions
             ? [
+                IconButton(
+                  icon: Icon(
+                    Icons.draw,
+                    color: _isSketchMode ? Colors.amberAccent : colorWhite,
+                  ),
+                  tooltip: 'Sketch Filter',
+                  onPressed: _isProcessingImages ? null : _toggleSketchFilter,
+                ),
                 if (hasDropdown)
                   Padding(
                     padding: const EdgeInsets.only(right: Dimens.spacingSm),
                     child:
                         _buildWaveformDropdownGroup(context, appLocalizations),
                   ),
-                _sketchLoading
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(colorWhite),
-                          ),
-                        ),
-                      )
-                    : IconButton(
-                        icon: Icon(
-                          Icons.auto_fix_high,
-                          color:
-                              _sketchEnabled ? Colors.yellowAccent : colorWhite,
-                        ),
-                        tooltip: appLocalizations.sketchFilter,
-                        onPressed: () =>
-                            _toggleSketch(context.read<ImageLoader>()),
-                      ),
                 Padding(
                   padding: const EdgeInsets.only(right: Dimens.spacingS),
                   child: _buildTransferActionButton(context, appLocalizations),
@@ -942,6 +930,8 @@ class _ImageEditorState extends State<ImageEditor> {
           },
           onSourceChanged: (String source) {
             setState(() {
+              _isSketchMode = false;
+              _preSketchImageBytes = null;
               _currentBrightness = 1.0;
               _currentContrast = 1.0;
               _pristineImage = null;
@@ -1005,8 +995,6 @@ class BottomActionMenu extends StatelessWidget {
     final bool isNarrow = screenWidth < 360;
     final double iconSize = isNarrow ? 20.0 : 22.0;
     final double fontSize = isNarrow ? 9.0 : 10.0;
-    // Grow the bar height with the user's font-scale so labels don't clip
-    // vertically under accessibility settings.
     final double barHeight = 75.0 + ((textScale - 1.0).clamp(0.0, 0.6)) * 28.0;
     return SafeArea(
       top: false,
