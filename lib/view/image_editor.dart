@@ -82,6 +82,7 @@ class _ImageEditorState extends State<ImageEditor> {
   img.Image? _pristineImage;
 
   bool _isSketchMode = false;
+  bool _isSketchLoading = false;
   Uint8List? _preSketchImageBytes;
 
   Map<String, dynamic>? _pendingCanvasDocument;
@@ -126,10 +127,10 @@ class _ImageEditorState extends State<ImageEditor> {
 
   Future<void> _toggleSketchFilter() async {
     final imgLoader = context.read<ImageLoader>();
-    if (imgLoader.image == null || _isProcessingImages) return;
+    if (imgLoader.image == null || _isProcessingImages || _isSketchLoading) return;
 
     setState(() {
-      _isProcessingImages = true;
+      _isSketchLoading = true;
     });
 
     try {
@@ -175,7 +176,7 @@ class _ImageEditorState extends State<ImageEditor> {
     } finally {
       if (mounted) {
         setState(() {
-          _isProcessingImages = false;
+          _isSketchLoading = false;
         });
       }
     }
@@ -885,33 +886,63 @@ class _ImageEditorState extends State<ImageEditor> {
                   ],
                 ),
               )
-            : Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: Dimens.spacingS),
-                child: _processedPngs.isNotEmpty
-                    ? ImageList(
-                        key: ValueKey(_processedSourceImage),
-                        processedPngs: _processedPngs,
-                        epd: widget.device,
-                        width: widget.device.height,
-                        height: widget.device.width,
-                        selectedIndex: _selectedFilterIndex,
-                        flipHorizontal: flipHorizontal,
-                        flipVertical: flipVertical,
-                        onFilterSelected: _onFilterSelected,
-                        onFlipHorizontal: toggleFlipHorizontal,
-                        onFlipVertical: toggleFlipVertical,
-                        onSave: _saveCurrentImage,
-                        onAdjustColors: () =>
-                            _showColorAdjustmentDialog(context, imgLoader),
-                      )
-                    : Center(
-                        child: Text(
-                          appLocalizations.importStartingImageFeedback,
-                          style: const TextStyle(
-                              color: grey500, fontSize: Dimens.fontSizeL),
+            : Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: Dimens.spacingS),
+                    child: _processedPngs.isNotEmpty
+                        ? ImageList(
+                            key: ValueKey(_processedSourceImage),
+                            processedPngs: _processedPngs,
+                            epd: widget.device,
+                            width: widget.device.height,
+                            height: widget.device.width,
+                            selectedIndex: _selectedFilterIndex,
+                            flipHorizontal: flipHorizontal,
+                            flipVertical: flipVertical,
+                            onFilterSelected: _onFilterSelected,
+                            onFlipHorizontal: toggleFlipHorizontal,
+                            onFlipVertical: toggleFlipVertical,
+                            onSave: _saveCurrentImage,
+                            onAdjustColors: () =>
+                                _showColorAdjustmentDialog(context, imgLoader),
+                          )
+                        : Center(
+                            child: Text(
+                              appLocalizations.importStartingImageFeedback,
+                              style: const TextStyle(
+                                  color: grey500, fontSize: Dimens.fontSizeL),
+                            ),
+                          ),
+                  ),
+                  if (_isSketchLoading)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.draw, color: colorWhite, size: 48),
+                            SizedBox(height: Dimens.spacingL),
+                            CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(colorWhite),
+                            ),
+                            SizedBox(height: Dimens.spacingM),
+                            Text(
+                              'Generating sketch...',
+                              style: TextStyle(
+                                color: colorWhite,
+                                fontSize: Dimens.fontSizeL,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
+                ],
               ),
       ),
       bottomNavigationBar: BottomActionMenu(
